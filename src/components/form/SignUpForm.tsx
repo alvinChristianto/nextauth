@@ -15,7 +15,10 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import GoogleSignInButton from '../GoogleSignInButton';
+import { useRouter } from 'next/navigation';
 
+
+const regexPassw : RegExp = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/
 const FormSchema = z
   .object({
     username: z.string().min(1, 'Username is required').max(100),
@@ -23,7 +26,8 @@ const FormSchema = z
     password: z
       .string()
       .min(1, 'Password is required')
-      .min(8, 'Password must have than 8 characters'),
+      .min(8, 'Password must have than 8 characters')
+      .regex(regexPassw, 'Minimum eight characters, at least one uppercase letter, one lowercase letter and one number'),
     confirmPassword: z.string().min(1, 'Password confirmation is required'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -32,6 +36,7 @@ const FormSchema = z
   });
 
 const SignUpForm = () => {
+  const router = useRouter();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -42,8 +47,25 @@ const SignUpForm = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof FormSchema>) => {
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof FormSchema>) => {
+    const response = await fetch('/api/user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({
+        username: values.username,
+        email: values.email,
+        password: values.password
+      })
+    })
+    if(response.ok) {
+      router.push('/sign-in')
+    }else {cek kembali dengan 27:00
+      const errorText = await response.text(); // Read the response body as text
+      console.error('Request failed with status:', response.status);
+      console.error('Error message:', errorText);
+    }
   };
 
   return (
